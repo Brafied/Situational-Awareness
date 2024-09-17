@@ -4,7 +4,8 @@ import os
 import transformers
 import torch
 import numpy as np
-import tqdm
+from tqdm import tqdm
+
 
 with open('test_oversight.jsonl', 'r') as file:
     test_data = [json.loads(line) for line in file]
@@ -31,7 +32,7 @@ layer = model.model.layers[-1].mlp.act_fn
 
 def create_hook_fn(activation_list):
     def hook_fn(module, input, output):
-        final_tokens = output[:, -1, :]
+        final_tokens = output[:, -1, :].detach()
         for token in final_tokens:
             activation_list.append(token.cpu().to(torch.float32).numpy())
         return output
