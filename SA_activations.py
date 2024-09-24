@@ -7,9 +7,9 @@ import numpy as np
 from tqdm import tqdm
 
 
-with open('test_oversight.jsonl', 'r') as file:
+with open('data/test_oversight.jsonl', 'r') as file:
     test_data = [json.loads(line) for line in file]
-with open('deploy_oversight.jsonl', 'r') as file:
+with open('data/deploy_oversight.jsonl', 'r') as file:
     deploy_data = [json.loads(line) for line in file]
 
 
@@ -45,7 +45,8 @@ hook = layer.register_forward_hook(create_hook_fn(test_data_activations))
 data_batches = [test_data[i:i + batch_size] for i in range(0, len(test_data), batch_size)]
 
 for batch in tqdm(data_batches, desc="Processing test data batches"):
-    batch_inputs = tokenizer([item['body'] for item in batch],
+    batch = [f"USER: {item['body']} ASSISTANT:" for item in batch]
+    batch_inputs = tokenizer(batch,
                              padding=True,
                              truncation=True,
                              return_tensors="pt").to(model.device)
@@ -53,7 +54,7 @@ for batch in tqdm(data_batches, desc="Processing test data batches"):
         model(**batch_inputs)
 
 test_data_activations_np = np.array(test_data_activations)
-np.save('test_data_activations_70B_quant.npy', test_data_activations_np) # SAVE
+np.save('results/test_data_activations_70B_quant.npy', test_data_activations_np) # SAVE
 
 hook.remove()
 
@@ -64,7 +65,8 @@ hook = layer.register_forward_hook(create_hook_fn(deploy_data_activations))
 data_batches = [deploy_data[i:i + batch_size] for i in range(0, len(deploy_data), batch_size)]
 
 for batch in tqdm(data_batches, desc="Processing deploy data batches"):
-    batch_inputs = tokenizer([item['body'] for item in batch],
+    batch = [f"USER: {item['body']} ASSISTANT:" for item in batch]
+    batch_inputs = tokenizer(batch,
                              padding=True,
                              truncation=True,
                              return_tensors="pt").to(model.device)
@@ -72,6 +74,6 @@ for batch in tqdm(data_batches, desc="Processing deploy data batches"):
         model(**batch_inputs)
 
 deploy_data_activations_np = np.array(deploy_data_activations)
-np.save('deploy_data_activations_70B_quant.npy', deploy_data_activations_np) # SAVE
+np.save('results/deploy_data_activations_70B_quant.npy', deploy_data_activations_np) # SAVE
 
 hook.remove()

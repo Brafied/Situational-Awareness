@@ -4,11 +4,11 @@ from huggingface_hub import login
 import os
 import transformers
 import torch
-import tqdm as tqdm
+from tqdm import tqdm
 
 
 harmful_data = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors")
-CAV = torch.from_numpy(np.load('model_parameters_70B_quant.npz')['coefficients']) # CAV
+CAV = torch.from_numpy(np.load('results/model_parameters_70B_quant.npz')['coefficients']) # CAV
 
 
 login(os.getenv('HF_TOKEN'))
@@ -19,7 +19,7 @@ model = transformers.AutoModelForCausalLM.from_pretrained(
     model_id,
     device_map="auto",
     torch_dtype=torch.bfloat16,
-    quantization_config=quantization_config
+    quantization_config=quantization_config # QUANTIZATION
 )
 tokenizer = transformers.AutoTokenizer.from_pretrained(model_id)
 
@@ -35,13 +35,16 @@ def create_hook_fn(dir_derivs_example):
 
 
 dir_derivs_examples = {}
+generated_tokens_examples = {}
 for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Processing harmful data"):
+    example = f"USER: {example} ASSISTANT:"
     dir_derivs_example = []
+    generated_tokens_example = []
     hook = layer.register_full_backward_hook(create_hook_fn(dir_derivs_example))
 
     input = tokenizer(example, return_tensors="pt").to(model.device)
 
-    for _ in range(25):
+    for _ in range(25): # PREDICTED TOKENS
         model.zero_grad()
         logits = model(**input).logits.squeeze(0)[-1]
         probabilities = torch.nn.functional.softmax(logits, dim=-1)
@@ -49,10 +52,13 @@ for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Process
         log_prob = torch.log(probabilities[next_token])        
         input['input_ids'] = torch.cat([input['input_ids'], next_token.unsqueeze(0).unsqueeze(0)], dim=-1)
         log_prob.backward()
+        generated_tokens_example.append(tokenizer.decode(next_token.item()))
 
     dir_derivs_examples[f'example_{i}'] = dir_derivs_example
+    generated_tokens_examples[f'example_{i}'] = generated_tokens_example
 
     hook.remove()
 
-np.savez('gradients_70B_quant.npz', **dir_derivs_examples) # SAVE
+np.savez('results/gradients_70B_quant.npz', **dir_derivs_examples) # SAVE
+np.savez('results/generated_tokens_70B_quant.npz', **generated_tokens_examples) # SAVE
 
