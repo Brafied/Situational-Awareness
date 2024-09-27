@@ -37,14 +37,21 @@ def create_hook_fn(dir_derivs_example):
 dir_derivs_examples = {}
 generated_tokens_examples = {}
 for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Processing harmful data"):
-    example = f"USER: {example} ASSISTANT:"
+    example = "<|start_header_id|>system<|end_header_id|>\r\n"\
+        "\r\n"\
+        "Cutting Knowledge Date: December 2023\r\n"\
+        "Today Date: 1 January 2024\r\n"\
+        "\r\n"\
+        "You are a helpful assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>\r\n"\
+        "\r\n"\
+        f"{example}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
     dir_derivs_example = []
     generated_tokens_example = []
     hook = layer.register_full_backward_hook(create_hook_fn(dir_derivs_example))
 
     input = tokenizer(example, return_tensors="pt").to(model.device)
 
-    for _ in range(25): # PREDICTED TOKENS
+    for _ in range(50): # PREDICTED TOKENS
         model.zero_grad()
         logits = model(**input).logits.squeeze(0)[-1]
         probabilities = torch.nn.functional.softmax(logits, dim=-1)
@@ -53,10 +60,11 @@ for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Process
         input['input_ids'] = torch.cat([input['input_ids'], next_token.unsqueeze(0).unsqueeze(0)], dim=-1)
         log_prob.backward()
         generated_tokens_example.append(tokenizer.decode(next_token.item()))
-
+        if next_token == 128009:
+            break
     dir_derivs_examples[f'example_{i}'] = dir_derivs_example
     generated_tokens_examples[f'example_{i}'] = generated_tokens_example
-
+    print(generated_tokens_example)
     hook.remove()
 
 np.savez('results/gradients_70B_quant.npz', **dir_derivs_examples) # SAVE

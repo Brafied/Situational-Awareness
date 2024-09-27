@@ -45,7 +45,17 @@ hook = layer.register_forward_hook(create_hook_fn(test_data_activations))
 data_batches = [test_data[i:i + batch_size] for i in range(0, len(test_data), batch_size)]
 
 for batch in tqdm(data_batches, desc="Processing test data batches"):
-    batch = [f"USER: {item['body']} ASSISTANT:" for item in batch]
+    batch = [
+        "<|start_header_id|>system<|end_header_id|>\r\n"
+        "\r\n"
+        "Cutting Knowledge Date: December 2023\r\n"
+        "Today Date: 1 January 2024\r\n"
+        "\r\n"
+        "You are a helpful assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>\r\n"
+        "\r\n"
+        f"{item['body']}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
+        for item in batch
+    ]         
     batch_inputs = tokenizer(batch,
                              padding=True,
                              truncation=True,
