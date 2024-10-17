@@ -64,7 +64,7 @@ for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Process
             break
     dir_derivs_examples[f'example_{i}'] = dir_derivs_example
     generated_tokens_examples[f'example_{i}'] = generated_tokens_example
-    print(generated_tokens_example)
+    print(generated_tokens_example, flush=True)
     hook.remove()
 
 np.savez('results/gradients_70B_quant.npz', **dir_derivs_examples) # SAVE
