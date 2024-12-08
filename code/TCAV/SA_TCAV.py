@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 harmful_data = load_dataset("JailbreakBench/JBB-Behaviors", "behaviors")
-CAV = torch.from_numpy(np.load('results/model_parameters_70B_quant.npz')['coefficients']) # CAV
+CAV = torch.from_numpy(np.load('../../results/model_parameters_70B_quant.npz')['coefficients']) # CAV
 
 
 login(os.getenv('HF_TOKEN'))
@@ -67,6 +67,6 @@ for i, example in tqdm(enumerate(harmful_data['harmful']['Goal']), desc="Process
     print(generated_tokens_example, flush=True)
     hook.remove()
 
-np.savez('results/gradients_70B_quant.npz', **dir_derivs_examples) # SAVE
-np.savez('results/generated_tokens_70B_quant.npz', **generated_tokens_examples) # SAVE
+np.savez('../../results/gradients_70B_quant.npz', **dir_derivs_examples) # SAVE
+np.savez('../../results/generated_tokens_70B_quant.npz', **generated_tokens_examples) # SAVE
 

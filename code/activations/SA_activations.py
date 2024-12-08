@@ -7,9 +7,9 @@ import numpy as np
 from tqdm import tqdm
 
 
-with open('data/test_oversight.jsonl', 'r') as file:
+with open('../../data/test_oversight.jsonl', 'r') as file:
     test_data = [json.loads(line) for line in file]
-with open('data/deploy_oversight.jsonl', 'r') as file:
+with open('../../data/deploy_oversight.jsonl', 'r') as file:
     deploy_data = [json.loads(line) for line in file]
 
 
@@ -64,7 +64,7 @@ for batch in tqdm(data_batches, desc="Processing test data batches"):
         model(**batch_inputs)
 
 test_data_activations_np = np.array(test_data_activations)
-np.save('results/test_data_activations_70B_quant.npy', test_data_activations_np) # SAVE
+np.save('../../results/test_data_activations_70B_quant.npy', test_data_activations_np) # SAVE
 
 hook.remove()
 
@@ -84,6 +84,6 @@ for batch in tqdm(data_batches, desc="Processing deploy data batches"):
         model(**batch_inputs)
 
 deploy_data_activations_np = np.array(deploy_data_activations)
-np.save('results/deploy_data_activations_70B_quant.npy', deploy_data_activations_np) # SAVE
+np.save('../../results/deploy_data_activations_70B_quant.npy', deploy_data_activations_np) # SAVE
 
 hook.remove()
